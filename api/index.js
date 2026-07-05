@@ -28,7 +28,7 @@ staticDirs.forEach(dir => {
 
 // Explicit route for homepage
 app.get('/', (req, res) => {
-  const homePath = path.join(__dirname, '../avto24-home.html');
+  const homePath = path.join(__dirname, '../index.html');
   if (fs.existsSync(homePath)) {
     res.sendFile(homePath);
   } else {
@@ -43,7 +43,7 @@ app.get('/:page', (req, res) => {
     res.sendFile(filePath);
   } else {
     // Serve homepage as fallback
-    const homePath = path.join(__dirname, '../avto24-home.html');
+    const homePath = path.join(__dirname, '../index.html');
     if (fs.existsSync(homePath)) {
       res.sendFile(homePath);
     } else {
@@ -54,7 +54,7 @@ app.get('/:page', (req, res) => {
 
 // 404 handler - Serve homepage
 app.use((req, res) => {
-  const homePath = path.join(__dirname, '../avto24-home.html');
+  const homePath = path.join(__dirname, '../index.html');
   if (fs.existsSync(homePath)) {
     res.sendFile(homePath);
   } else {
