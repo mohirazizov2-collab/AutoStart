@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVTO24 — Yangi avlod avtomobil bozori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt-950:#0B0D10;
+    --asphalt-900:#111318;
+    --asphalt-800:#1A1D23;
+    --asphalt-700:#242830;
+    --steel-400:#8B93A1;
+    --steel-200:#C4CAD3;
+    --platinum-50:#F7F7F5;
+    --platinum-100:#EFEFEC;
+    --headlight-500:#FFB020;
+    --headlight-400:#FFC553;
+    --signal-500:#4F7CFF;
+    --line:rgba(255,255,255,0.08);
+    --radius-lg:24px;
+    --radius-md:16px;
+    --radius-sm:10px;
+    --bg:var(--asphalt-950);
+    --surface:var(--asphalt-800);
+    --surface-2:var(--asphalt-900);
+    --text:var(--platinum-50);
+    --text-dim:var(--steel-400);
+    --border:var(--line);
+  }
+  html.light{
+    --bg:#F4F4F2;
+    --surface:#FFFFFF;
+    --surface-2:#FBFBFA;
+    --text:#14161A;
+    --text-dim:#5B6270;
+    --border:rgba(20,22,26,0.08);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    transition:background .4s ease, color .4s ease;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+  .display{font-family:'Space Grotesk', sans-serif;}
+  .mono{font-family:'JetBrains Mono', monospace;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .wrap{max-width:1240px; margin:0 auto; padding:0 28px;}
+
+  /* road-line texture used as ambient bg on hero */
+  .road-tex{
+    position:absolute; inset:0;
+    background-image: repeating-linear-gradient(90deg, transparent 0 46px, rgba(255,255,255,.05) 46px 50px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+    pointer-events:none;
+  }
+
+  /* ---------- NAVBAR ---------- */
+  .navbar{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border-bottom:1px solid var(--border);
+    transition: transform .35s ease, background .4s ease;
+  }
+  .navbar.hide{ transform: translateY(-100%); }
+  .nav-inner{ display:flex; align-items:center; justify-content:space-between; height:72px; }
+  .logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:20px; letter-spacing:-0.02em; }
+  .logo .dot{ width:9px; height:9px; border-radius:50%; background:var(--headlight-500); box-shadow:0 0 12px var(--headlight-500);}
+  .nav-links{ display:flex; gap:32px; font-size:14.5px; color:var(--text-dim); }
+  .nav-links a{ position:relative; padding:6px 0; transition:color .2s; }
+  .nav-links a:hover{ color:var(--text); }
+  .nav-links a::after{
+    content:""; position:absolute; left:0; bottom:0; width:0%; height:2px; background:var(--headlight-500);
+    transition:width .25s ease;
+  }
+  .nav-links a:hover::after{ width:100%; }
+  .nav-actions{ display:flex; align-items:center; gap:14px; }
+  .icon-btn{
+    width:40px; height:40px; border-radius:50%; border:1px solid var(--border); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; color:var(--text); transition: all .2s;
+  }
+  .icon-btn:hover{ border-color:var(--headlight-500); transform:translateY(-1px); }
+  .btn-primary{
+    background:var(--headlight-500); color:#181206; font-weight:600; font-size:14px;
+    padding:11px 20px; border-radius:100px; border:none; transition: transform .2s, box-shadow .2s;
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 24px -8px rgba(255,176,32,.55); }
+
+  .modal-overlay{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(11,13,16,.75); backdrop-filter:blur(10px); z-index:200;
+    padding:28px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{
+    width:100%; max-width:720px; background:var(--surface); border:1px solid var(--border);
+    border-radius:24px; box-shadow:0 40px 80px -40px rgba(0,0,0,.45); overflow:hidden;
+  }
+  .modal-header{
+    display:flex; align-items:center; justify-content:space-between; padding:24px 28px;
+    border-bottom:1px solid var(--border);
+  }
+  .modal-header h3{ margin:0; font-size:20px; font-weight:700; }
+  .modal-close{
+    width:38px; height:38px; border-radius:50%; border:none; background:var(--surface-2); color:var(--text);
+    font-size:22px; line-height:1; cursor:pointer;
+  }
+  .modal-body{ padding:24px 28px 28px; }
+  .form-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media (max-width:760px){ .form-grid{ grid-template-columns:1fr; } }
+  .form-field{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .form-field label{ font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.08em; }
+  .form-field input, .form-field select, .form-field textarea{
+    width:100%; min-height:44px; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text); padding:12px 14px; font-size:14px; outline:none;
+  }
+  .form-field textarea{ min-height:120px; resize:vertical; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:14px; margin-top:8px; }
+  .modal-actions .btn-secondary{
+    background:transparent; color:var(--text); border:1px solid var(--border); padding:12px 18px; border-radius:999px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{ position:relative; padding:168px 0 120px; overflow:hidden; }
+  .hero::before{
+    content:""; position:absolute; inset:-20% -10% auto -10%; height:120%;
+    background: radial-gradient(60% 55% at 25% 15%, rgba(255,176,32,.16), transparent 60%),
+                radial-gradient(50% 50% at 85% 10%, rgba(79,124,255,.14), transparent 60%);
+    pointer-events:none;
+  }
+  html.light .hero::before{ opacity:.6; }
+  .hero-inner{ position:relative; z-index:2; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--headlight-400);
+    background:rgba(255,176,32,.1); border:1px solid rgba(255,176,32,.25); padding:7px 14px; border-radius:100px;
+    margin-bottom:28px; opacity:0; animation: rise .7s .1s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .hero h1{
+    font-size:clamp(38px, 6vw, 74px); line-height:1.02; letter-spacing:-0.03em; font-weight:700;
+    max-width:900px; opacity:0; animation: rise .8s .22s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .hero h1 .accent{ color:var(--headlight-500); }
+  .hero p.lead{
+    font-size:18px; color:var(--text-dim); max-width:560px; margin-top:22px; line-height:1.6;
+    opacity:0; animation: rise .8s .34s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+
+  @keyframes rise{ from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:translateY(0);} }
+
+  /* search glass card */
+  .search-card{
+    margin-top:48px; background: color-mix(in srgb, var(--surface) 78%, transparent);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:22px; display:grid; grid-template-columns: repeat(4, 1fr) auto; gap:14px; align-items:end;
+    box-shadow: 0 30px 60px -24px rgba(0,0,0,.5);
+    opacity:0; animation: rise .8s .46s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .field{ display:flex; flex-direction:column; gap:8px; }
+  .field label{ font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+  .field select, .field input{
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+    border-radius:var(--radius-sm); padding:12px 14px; font-size:14.5px; outline:none;
+    transition:border-color .2s;
+    appearance:none; -webkit-appearance:none;
+  }
+  .field select:focus, .field input:focus{ border-color:var(--headlight-500); }
+  .search-btn{
+    background:var(--headlight-500); color:#181206; border:none; border-radius:var(--radius-sm);
+    padding:13px 22px; font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:8px;
+    transition: transform .2s, box-shadow .2s; white-space:nowrap;
+  }
+  .search-btn:hover{ transform:translateY(-2px); box-shadow:0 12px 26px -10px rgba(255,176,32,.6); }
+
+  @media (max-width: 880px){
+    .search-card{ grid-template-columns: 1fr 1fr; }
+    .search-btn{ grid-column: 1 / -1; justify-content:center; }
+  }
+
+  /* ---------- LANE DIVIDER (signature element) ---------- */
+  .lane-divider{
+    display:flex; align-items:center; gap:8px; padding: 64px 0 8px;
+  }
+  .lane-divider .dash{ flex:1; height:2px; background: repeating-linear-gradient(90deg, var(--border) 0 20px, transparent 20px 34px); }
+  .lane-divider .label{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-dim); white-space:nowrap; }
+
+  /* ---------- SECTION HEAD ---------- */
+  .section-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:32px; gap:20px; flex-wrap:wrap;}
+  .section-head h2{ font-size:clamp(24px,3vw,34px); letter-spacing:-0.02em; font-weight:700; }
+  .section-head p{ color:var(--text-dim); font-size:15px; margin-top:6px; max-width:480px;}
+  .see-all{ font-size:14px; font-weight:600; color:var(--headlight-500); display:flex; align-items:center; gap:6px; padding-bottom:6px;}
+
+  /* ---------- CATEGORY TILES ---------- */
+  .cats{ padding:8px 0 20px; }
+  .cat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:900px){ .cat-grid{ grid-template-columns:1fr; } }
+  .cat-card{
+    position:relative; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:28px; overflow:hidden; transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .3s;
+    cursor:pointer;
+  }
+  .cat-card:hover{ transform:translateY(-6px); border-color:var(--headlight-500); }
+  .cat-card .gauge{
+    width:56px; height:56px; border-radius:50%; border:2px solid var(--border);
+    display:flex; align-items:center; justify-content:center; margin-bottom:22px; position:relative;
+  }
+  .cat-card .gauge svg{ width:26px; height:26px; }
+  .cat-card h3{ font-size:19px; font-weight:600; margin-bottom:8px; letter-spacing:-.01em; }
+  .cat-card p{ color:var(--text-dim); font-size:14px; line-height:1.5; margin-bottom:18px; }
+  .cat-card .tag{ font-size:12px; color:var(--headlight-400); font-weight:600; }
+  .cat-card::after{
+    content:""; position:absolute; right:-40px; bottom:-40px; width:140px; height:140px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,176,32,.14), transparent 70%); opacity:0; transition:opacity .3s;
+  }
+  .cat-card:hover::after{ opacity:1; }
+  .cat-card.blue .gauge{ color:var(--signal-500); }
+  .cat-card.amber .gauge{ color:var(--headlight-500); }
+  .cat-card.green .gauge{ color:#3ECF8E; }
+
+  /* ---------- STATS (odometer) ---------- */
+  .stats{ padding:56px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; text-align:center; }
+  @media (max-width:760px){ .stat-grid{ grid-template-columns:repeat(2,1fr); } }
+  .stat-num{ font-size:clamp(28px,4vw,42px); font-weight:700; letter-spacing:-0.02em; }
+  .stat-label{ color:var(--text-dim); font-size:13px; margin-top:6px; }
+
+  /* ---------- CAR CARDS ---------- */
+  .fleet{ padding:88px 0; }
+  .car-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+  @media (max-width:960px){ .car-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:640px){ .car-grid{ grid-template-columns:1fr; } }
+
+  .car-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+    overflow:hidden; transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .4s;
+  }
+  .car-card:hover{ transform:translateY(-8px); box-shadow:0 30px 50px -20px rgba(0,0,0,.4); }
+  .car-media{
+    height:190px; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .car-media svg{ width:78%; transition:transform .6s cubic-bezier(.2,.8,.2,1); }
+  .car-card:hover .car-media svg{ transform: translateX(6px) scale(1.03); }
+  .car-badge{
+    position:absolute; top:14px; left:14px; font-size:11px; font-weight:700; padding:6px 11px; border-radius:100px;
+    backdrop-filter:blur(6px);
+  }
+  .car-badge.rent0{ background:rgba(255,176,32,.16); color:var(--headlight-400); border:1px solid rgba(255,176,32,.3); }
+  .car-badge.rent1{ background:rgba(79,124,255,.16); color:#88A6FF; border:1px solid rgba(79,124,255,.3); }
+  .car-badge.cash{ background:rgba(62,207,142,.16); color:#6FE0AC; border:1px solid rgba(62,207,142,.3); }
+  .fav-btn{
+    position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:50%;
+    background:rgba(0,0,0,.35); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,.15);
+    display:flex; align-items:center; justify-content:center; color:#fff; transition:transform .2s;
+  }
+  .fav-btn:hover{ transform:scale(1.1); }
+  .fav-btn.active svg{ fill:var(--headlight-500); stroke:var(--headlight-500); }
+  .car-body{ padding:20px; }
+  .car-title{ font-weight:600; font-size:16.5px; letter-spacing:-.01em; margin-bottom:4px;}
+  .car-sub{ font-size:13px; color:var(--text-dim); margin-bottom:14px; }
+  .car-price-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
+  .car-price{ font-size:20px; font-weight:700; }
+  .car-price small{ font-size:12px; color:var(--text-dim); font-weight:500; }
+  .car-meta{ display:flex; gap:14px; font-size:12.5px; color:var(--text-dim); border-top:1px solid var(--border); padding-top:14px; }
+  .car-meta span{ display:flex; align-items:center; gap:5px; }
+  .car-meta svg{ width:14px; height:14px; opacity:.7; }
+
+  /* ---------- WHY US ---------- */
+  .why{ padding:80px 0; }
+  .why-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  @media (max-width:900px){ .why-grid{ grid-template-columns:repeat(2,1fr); } }
+  .why-item{ padding:24px 0; border-top:1px solid var(--border); }
+  .why-item .n{ font-family:'JetBrains Mono'; color:var(--headlight-500); font-size:13px; margin-bottom:14px; display:block;}
+  .why-item h4{ font-size:16px; font-weight:600; margin-bottom:8px; }
+  .why-item p{ font-size:13.5px; color:var(--text-dim); line-height:1.55; }
+
+  /* ---------- FOOTER ---------- */
+  footer{ background:var(--surface-2); border-top:1px solid var(--border); padding:64px 0 28px; margin-top:40px; }
+  .foot-grid{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:40px; margin-bottom:48px; }
+  @media (max-width:760px){ .foot-grid{ grid-template-columns:1fr 1fr; } }
+  .foot-col h5{ font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); margin-bottom:16px; }
+  .foot-col a{ display:block; font-size:14px; color:var(--text); opacity:.8; margin-bottom:11px; transition:opacity .2s; }
+  .foot-col a:hover{ opacity:1; color:var(--headlight-500); }
+  .foot-bottom{ display:flex; justify-content:space-between; align-items:center; padding-top:24px; border-top:1px solid var(--border); font-size:13px; color:var(--text-dim); flex-wrap:wrap; gap:12px;}
+
+  /* reveal on scroll */
+  .reveal{ opacity:0; transform:translateY(24px); transition:opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+  <div class="wrap nav-inner">
+    <div class="logo"><span class="dot"></span><span class="display">AVTO24</span></div>
+    <div class="nav-links">
+      <a href="#">Bosh sahifa</a>
+      <a href="#cats">To'lov turlari</a>
+      <a href="#fleet">E'lonlar</a>
+      <a href="#why">Nega biz</a>
+      <a href="#">Dilerlar</a>
+    </div>
+    <div class="nav-actions">
+      <button class="icon-btn" id="themeToggle" title="Mavzuni almashtirish">
+        <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1M12 20v1M4.2 4.2l.7.7M18.4 18.4l.7.7M3 12h1M20 12h1M4.2 19.8l.7-.7M18.4 5.6l.7-.7" stroke-linecap="round"/><circle cx="12" cy="12" r="5"/></svg>
+      </button>
+      <button class="btn-primary" id="openListingBtn">E'lon joylash</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="road-tex"></div>
+  <div class="wrap hero-inner">
+    <span class="eyebrow display">● Toshkent · Andijon · Farg'ona bo'yicha 12 400+ tasdiqlangan e'lon</span>
+    <h1 class="display">Avtomobilga ega bo'lishning <span class="accent">to'g'ri yo'li.</span></h1>
+    <p class="lead">Boshlang'ich to'lovsiz ijara, boshlang'ich to'lov bilan ijara yoki naqd sotib olish — barchasi bitta joyda, shaffof shartlar bilan.</p>
+
+    <div class="search-card">
+      <div class="field">
+        <label>Brend</label>
+        <select id="brandSelect"><option value="all">Barcha brendlar</option><option value="Chevrolet">Chevrolet</option><option value="Hyundai">Hyundai</option><option value="Kia">Kia</option><option value="BYD">BYD</option><option value="Toyota">Toyota</option></select>
+      </div>
+      <div class="field">
+        <label>To'lov turi</label>
+        <select id="paymentSelect"><option value="all">Barchasi</option><option value="rent0">Boshlang'ichsiz ijara</option><option value="rent1">Boshlang'ich to'lov bilan</option><option value="cash">Naqd sotib olish</option></select>
+      </div>
+      <div class="field">
+        <label>Narx oralig'i</label>
+        <select id="priceSelect"><option value="all">Istalgan narx</option><option value="100-200">100 – 200 mln so'm</option><option value="200-350">200 – 350 mln so'm</option><option value="350+">350 mln+</option></select>
+      </div>
+      <div class="field">
+        <label>Hudud</label>
+        <select id="regionSelect"><option value="all">Barcha hududlar</option><option value="Toshkent">Toshkent shahri</option><option value="Samarqand">Samarqand</option><option value="Buxoro">Buxoro</option></select>
+      </div>
+      <button type="button" class="search-btn" id="searchButton">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
+        Qidirish
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="lane-divider"><div class="dash"></div><span class="label">Uchta yo'l</span><div class="dash"></div></div>
+</div>
+
+<section class="cats" id="cats">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <h2 class="display">Qanday sotib olishni tanlaysiz?</h2>
+        <p>Har bir mashinada uchta variant mavjud — o'zingizga qulayini tanlang.</p>
+      </div>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card amber reveal">
+        <div class="gauge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div>
+        <h3>Boshlang'ich to'lovsiz ijara</h3>
+        <p>0 so'm boshlang'ich to'lov bilan bugunoq avtomobilni haydab keting, oylik to'lovlar bilan sekin-asta o'ziniki qiling.</p>
+        <span class="tag">3 240 ta e'lon →</span>
+      </div>
+      <div class="cat-card blue reveal">
+        <div class="gauge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+        <h3>Boshlang'ich to'lov bilan ijara</h3>
+        <p>Kichik boshlang'ich to'lov orqali oylik to'lovlarni pasaytiring va muddatni qisqartiring.</p>
+        <span class="tag">5 810 ta e'lon →</span>
+      </div>
+      <div class="cat-card green reveal">
+        <div class="gauge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Naqd sotib olish</h3>
+        <p>To'liq to'lov qiling va avtomobil darhol sizniki bo'ladi — hujjatlar shu kuni rasmiylashtiriladi.</p>
+        <span class="tag">3 380 ta e'lon →</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="wrap stat-grid">
+    <div class="reveal"><div class="stat-num mono" data-count="12430">0</div><div class="stat-label">Faol e'lonlar</div></div>
+    <div class="reveal"><div class="stat-num mono" data-count="860">0</div><div class="stat-label">Tasdiqlangan dilerlar</div></div>
+    <div class="reveal"><div class="stat-num mono" data-count="41200">0</div><div class="stat-label">Muvaffaqiyatli bitimlar</div></div>
+    <div class="reveal"><div class="stat-num mono" data-count="98">0</div><div class="stat-label">% mijozlar mamnun (o'rtacha)</div></div>
+  </div>
+</section>
+
+<section class="fleet" id="fleet">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <h2 class="display">Tavsiya etilgan avtomobillar</h2>
+        <p>Sizning qidiruvingiz va joylashuvingizga mos eng yaxshi takliflar.</p>
+      </div>
+      <a href="#" class="see-all">Barchasini ko'rish →</a>
+    </div>
+    <div class="car-grid" id="carGrid"></div>
+  </div>
+</section>
+
+<section class="why" id="why">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <h2 class="display">Nega aynan AVTO24?</h2>
+      </div>
+    </div>
+    <div class="why-grid">
+      <div class="why-item reveal"><span class="n mono">01</span><h4>Shaffof shartnoma</h4><p>Har bir oylik to'lov, foiz va muddat oldindan aniq ko'rsatiladi — yashirin to'lovlar yo'q.</p></div>
+      <div class="why-item reveal"><span class="n mono">02</span><h4>Tasdiqlangan sotuvchilar</h4><p>Barcha dilerlar va jismoniy shaxslar hujjatlari tekshiruvidan o'tadi.</p></div>
+      <div class="why-item reveal"><span class="n mono">03</span><h4>VIN va tarix tekshiruvi</h4><p>Har bir avtomobilning baxtsiz hodisalar va narx tarixini bir tugma bosish bilan ko'ring.</p></div>
+      <div class="why-item reveal"><span class="n mono">04</span><h4>Onlayn kalkulyator</h4><p>Oylik to'lovni oldindan hisoblab, byudjetingizga moslang.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="modal-overlay" id="listingModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>E'lon joylash</h3>
+      <button class="modal-close" id="closeListingModal" type="button">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="listingForm">
+        <div class="form-grid">
+          <div class="form-field"><label for="listingTitle">Avtomobil nomi</label><input id="listingTitle" name="title" type="text" placeholder="Masalan: Chevrolet Onix LT" required></div>
+          <div class="form-field"><label for="listingBrand">Brend</label><input id="listingBrand" name="brand" type="text" placeholder="Chevrolet" required></div>
+          <div class="form-field"><label for="listingModel">Model</label><input id="listingModel" name="model" type="text" placeholder="Onix" required></div>
+          <div class="form-field"><label for="listingYear">Yil</label><input id="listingYear" name="year" type="number" min="1990" max="2026" placeholder="2023" required></div>
+          <div class="form-field"><label for="listingPrice">Narx</label><input id="listingPrice" name="price" type="number" min="1000000" placeholder="1900000" required></div>
+          <div class="form-field"><label for="listingPaymentType">To'lov turi</label><select id="listingPaymentType" name="paymentType" required><option value="rent0">Boshlang'ichsiz ijara</option><option value="rent1">Boshlang'ich to'lov bilan</option><option value="cash">Naqd sotib olish</option></select></div>
+          <div class="form-field"><label for="listingRegion">Hudud</label><input id="listingRegion" name="region" type="text" placeholder="Toshkent" required></div>
+          <div class="form-field"><label for="listingTransmission">Transmissiya</label><select id="listingTransmission" name="transmission" required><option>Avtomat</option><option>Mexanika</option><option>Avtomat (EV)</option></select></div>
+          <div class="form-field" style="grid-column:1 / -1;"><label for="listingDesc">Tavsif</label><textarea id="listingDesc" name="description" placeholder="Qisqacha ta'rif yozing..."></textarea></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancelListingBtn">Bekor qilish</button>
+          <button type="submit" class="btn-primary">Joylash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-col">
+        <div class="logo" style="margin-bottom:14px;"><span class="dot"></span><span class="display">AVTO24</span></div>
+        <p style="color:var(--text-dim); font-size:14px; max-width:280px; line-height:1.6;">O'zbekistondagi eng shaffof avtomobil bozori — ijara, boshlang'ich to'lov bilan va naqd sotib olish bir joyda.</p>
+      </div>
+      <div class="foot-col"><h5>Xaridorlar</h5><a href="#">Qidiruv</a><a href="#">Kalkulyator</a><a href="#">Saqlangan e'lonlar</a><a href="#">Solishtirish</a></div>
+      <div class="foot-col"><h5>Sotuvchilar</h5><a href="#">E'lon joylash</a><a href="#">Diler paneli</a><a href="#">Tariflar</a></div>
+      <div class="foot-col"><h5>Kompaniya</h5><a href="#">Biz haqimizda</a><a href="#">Aloqa</a><a href="#">Yordam markazi</a></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 AVTO24. Barcha huquqlar himoyalangan.</span>
+      <span>O'zbek · Rus · English</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ---------- theme toggle ----------
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', ()=>{
+  document.documentElement.classList.toggle('light');
+});
+
+// ---------- navbar hide on scroll ----------
+let lastY = window.scrollY;
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll', ()=>{
+  const y = window.scrollY;
+  if(y > lastY && y > 120){ nav.classList.add('hide'); } else { nav.classList.remove('hide'); }
+  lastY = y;
+}, {passive:true});
+
+// ---------- reveal on scroll ----------
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, {threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// ---------- odometer counters ----------
+const counters = document.querySelectorAll('.stat-num');
+const cio = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const el = e.target; const target = +el.dataset.count; let cur = 0;
+      const step = Math.max(1, Math.round(target/60));
+      const t = setInterval(()=>{
+        cur += step;
+        if(cur >= target){ cur = target; clearInterval(t); }
+        el.textContent = cur.toLocaleString('en-US');
+      }, 16);
+      cio.unobserve(el);
+    }
+  });
+}, {threshold:.4});
+counters.forEach(el=>cio.observe(el));
+
+// ---------- car silhouette svg (reused, tinted) ----------
+function carSVG(color){
+  return `<svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="g${color}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity=".5"/>
+    </linearGradient></defs>
+    <ellipse cx="150" cy="100" rx="130" ry="10" fill="black" opacity=".25"/>
+    <path d="M20 78 Q30 45 70 40 L110 40 Q125 20 160 20 L205 20 Q225 20 235 40 L270 45 Q285 50 285 70 L285 82 L20 82 Z" fill="url(#g${color})"/>
+    <circle cx="75" cy="86" r="16" fill="#111318" stroke="#444" stroke-width="3"/>
+    <circle cx="225" cy="86" r="16" fill="#111318" stroke="#444" stroke-width="3"/>
+    <rect x="118" y="30" width="80" height="20" rx="4" fill="black" opacity=".2"/>
+  </svg>`;
+}
+
+// ---------- mock listings ----------
+const cars = [
+  {name:"Chevrolet Onix LT", year:2023, type:"rent0", price:"1 890 000", unit:"so'm/oy", km:"12 000", trans:"Avtomat", region:"Toshkent", color:"#FFB020"},
+  {name:"Hyundai Elantra 2.0", year:2022, type:"rent1", price:"2 340 000", unit:"so'm/oy", km:"28 400", trans:"Avtomat", region:"Samarqand", color:"#4F7CFF"},
+  {name:"Kia K5 GT-Line", year:2024, type:"cash", price:"312 000 000", unit:"so'm", km:"3 200", trans:"Avtomat", region:"Toshkent", color:"#3ECF8E"},
+  {name:"BYD Song Plus", year:2023, type:"rent1", price:"2 980 000", unit:"so'm/oy", km:"9 800", trans:"Avtomat (EV)", region:"Buxoro", color:"#4F7CFF"},
+  {name:"Chevrolet Tracker", year:2022, type:"rent0", price:"2 120 000", unit:"so'm/oy", km:"31 500", trans:"Mexanika", region:"Farg'ona", color:"#FFB020"},
+  {name:"Toyota Camry 70", year:2021, type:"cash", price:"398 000 000", unit:"so'm", km:"41 000", trans:"Avtomat", region:"Toshkent", color:"#3ECF8E"},
+];
+
+const badgeText = {rent0:"Boshlang'ichsiz ijara", rent1:"Boshlang'ich to'lov bilan", cash:"Naqd sotuv"};
+
+let grid;
+let brandSelect;
+let paymentSelect;
+let priceSelect;
+let regionSelect;
+let searchButton;
+
+function initSearchControls(){
+  grid = document.getElementById('carGrid');
+  brandSelect = document.getElementById('brandSelect');
+  paymentSelect = document.getElementById('paymentSelect');
+  priceSelect = document.getElementById('priceSelect');
+  regionSelect = document.getElementById('regionSelect');
+  searchButton = document.getElementById('searchButton');
+
+  if (!searchButton) {
+    console.error('Search button not found');
+    return;
+  }
+
+  searchButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    filterCars();
+  });
+}
+
+function formatPrice(value){
+  return value.toLocaleString('ru-RU');
+}
+
+function applyPriceFilter(car, priceFilter){
+  if(priceFilter === 'all') return true;
+  const priceNumber = parseInt(car.price.replace(/\s|[^0-9]/g, ''), 10);
+  if(priceFilter === '100-200') return priceNumber >= 100000000 && priceNumber <= 200000000;
+  if(priceFilter === '200-350') return priceNumber >= 200000000 && priceNumber <= 350000000;
+  if(priceFilter === '350+') return priceNumber >= 350000000;
+  return true;
+}
+
+function renderCars(list){
+  if(!list.length){
+    grid.innerHTML = '<div class="car-card" style="padding:24px; width:100%; text-align:center; color:var(--text-dim);">Hech qanday mos avtomobil topilmadi.</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map((c)=>`
+    <div class="car-card reveal">
+      <div class="car-media" style="background:linear-gradient(160deg, var(--surface-2), var(--surface));">
+        <span class="car-badge ${c.type}">${badgeText[c.type]}</span>
+        <button class="fav-btn" onclick="this.classList.toggle('active')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+        </button>
+        ${carSVG(c.color)}
+      </div>
+      <div class="car-body">
+        <div class="car-title">${c.name}</div>
+        <div class="car-sub">${c.year} · ${c.region}</div>
+        <div class="car-price-row">
+          <div class="car-price mono">${formatPrice(parseInt(c.price.replace(/\D/g, ''), 10))} <small>${c.unit}</small></div>
+        </div>
+        <div class="car-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>${c.km} km</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/></svg>${c.trans}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('#carGrid .reveal').forEach(el=>io.observe(el));
+}
+
+function openListingModal(){
+  document.getElementById('listingModal').classList.add('open');
+}
+
+function closeListingModal(){
+  document.getElementById('listingModal').classList.remove('open');
+}
+
+function handleListingSubmit(event){
+  event.preventDefault();
+  const form = event.target;
+  const data = {
+    title: form.title.value,
+    brand: form.brand.value,
+    model: form.model.value,
+    year: parseInt(form.year.value, 10),
+    price: parseInt(form.price.value, 10),
+    paymentType: form.paymentType.value,
+    region: form.region.value,
+    transmission: form.transmission.value,
+    description: form.description.value,
+    unit: form.paymentType.value === 'cash' ? "so'm" : "so'm/oy"
+  };
+
+  console.log('Listing payload:', data);
+  alert('E\'lon joylash uchun so\'rov yuborildi. Backend API qo\'shilganida bu haqiqiy joylashga aylanadi.');
+  closeListingModal();
+}
+
+function filterCars(){
+  const selectedBrand = brandSelect.value;
+  const selectedPayment = paymentSelect.value;
+  const selectedPrice = priceSelect.value;
+  const selectedRegion = regionSelect.value;
+
+  const filtered = cars.filter(car => {
+    const brandMatch = selectedBrand === 'all' || car.name.includes(selectedBrand);
+    const paymentMatch = selectedPayment === 'all' || car.type === selectedPayment;
+    const regionMatch = selectedRegion === 'all' || car.region === selectedRegion;
+    const priceMatch = applyPriceFilter(car, selectedPrice);
+    return brandMatch && paymentMatch && regionMatch && priceMatch;
+  });
+
+  renderCars(filtered);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initSearchControls();
+  document.getElementById('openListingBtn').addEventListener('click', openListingModal);
+  document.getElementById('closeListingModal').addEventListener('click', closeListingModal);
+  document.getElementById('cancelListingBtn').addEventListener('click', closeListingModal);
+  document.getElementById('listingForm').addEventListener('submit', handleListingSubmit);
+  renderCars(cars);
+});
+</script>
+
+</body>
+</html>
