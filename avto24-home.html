@@ -314,10 +314,8 @@
       <a href="#">Dilerlar</a>
     </div>
     <div class="nav-actions">
-      <button class="icon-btn" id="themeToggle" title="Mavzuni almashtirish">
-        <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1M12 20v1M4.2 4.2l.7.7M18.4 18.4l.7.7M3 12h1M20 12h1M4.2 19.8l.7-.7M18.4 5.6l.7-.7" stroke-linecap="round"/><circle cx="12" cy="12" r="5"/></svg>
-      </button>
-      <button class="btn-primary" id="openListingBtn">E'lon joylash</button>
+      <div id="themeToggleContainer"></div>
+      <div id="listingButtonContainer"></div>
     </div>
   </div>
 </nav>
@@ -346,10 +344,7 @@
         <label>Hudud</label>
         <select id="regionSelect"><option value="all">Barcha hududlar</option><option value="Toshkent">Toshkent shahri</option><option value="Samarqand">Samarqand</option><option value="Buxoro">Buxoro</option></select>
       </div>
-      <button type="button" class="search-btn" id="searchButton">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
-        Qidirish
-      </button>
+      <div id="searchButtonContainer"></div>
     </div>
   </div>
 </section>
@@ -431,7 +426,7 @@
   <div class="modal-card">
     <div class="modal-header">
       <h3>E'lon joylash</h3>
-      <button class="modal-close" id="closeListingModal" type="button">×</button>
+      <div id="modalCloseContainer"></div>
     </div>
     <div class="modal-body">
       <form id="listingForm">
@@ -447,8 +442,8 @@
           <div class="form-field" style="grid-column:1 / -1;"><label for="listingDesc">Tavsif</label><textarea id="listingDesc" name="description" placeholder="Qisqacha ta'rif yozing..."></textarea></div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="cancelListingBtn">Bekor qilish</button>
-          <button type="submit" class="btn-primary">Joylash</button>
+          <div id="modalCancelContainer"></div>
+          <div id="modalSubmitContainer"></div>
         </div>
       </form>
     </div>
@@ -474,11 +469,28 @@
 </footer>
 
 <script>
-// ---------- theme toggle ----------
-const themeBtn = document.getElementById('themeToggle');
-themeBtn.addEventListener('click', ()=>{
-  document.documentElement.classList.toggle('light');
-});
+async function loadButtonComponent(containerId, filePath){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+
+  try {
+    const response = await fetch(filePath);
+    if(!response.ok) throw new Error(`Failed to load ${filePath}`);
+    container.innerHTML = await response.text();
+  } catch (error) {
+    console.error(error);
+    container.innerHTML = '';
+  }
+}
+
+function attachThemeToggleHandler(){
+  const themeBtn = document.getElementById('themeToggle');
+  if(!themeBtn) return;
+
+  themeBtn.addEventListener('click', ()=>{
+    document.documentElement.classList.toggle('light');
+  });
+}
 
 // ---------- navbar hide on scroll ----------
 let lastY = window.scrollY;
@@ -657,7 +669,15 @@ function filterCars(){
   renderCars(filtered);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadButtonComponent('themeToggleContainer', 'components/buttons/theme-toggle.html');
+  await loadButtonComponent('listingButtonContainer', 'components/buttons/listing-button.html');
+  await loadButtonComponent('searchButtonContainer', 'components/buttons/search-button.html');
+  await loadButtonComponent('modalCloseContainer', 'components/buttons/modal-close.html');
+  await loadButtonComponent('modalCancelContainer', 'components/buttons/modal-cancel.html');
+  await loadButtonComponent('modalSubmitContainer', 'components/buttons/submit-button.html');
+
+  attachThemeToggleHandler();
   initSearchControls();
   document.getElementById('openListingBtn').addEventListener('click', openListingModal);
   document.getElementById('closeListingModal').addEventListener('click', closeListingModal);
